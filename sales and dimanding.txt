@@ -1,0 +1,130 @@
+# 1️⃣ Import Libraries
+import numpy as np
+import pandas as pd
+import matplotlib.pyplot as plt
+from sklearn.ensemble import RandomForestRegressor
+from sklearn.metrics import mean_absolute_percentage_error
+
+
+# 2️⃣ Create Sample Business Dataset
+np.random.seed(42)
+
+dates = pd.date_range(start="2022-01-01", periods=365)
+
+trend = np.linspace(100, 300, 365)
+seasonality = 20 * np.sin(np.arange(365) * (2 * np.pi / 30))
+noise = np.random.normal(0, 10, 365)
+
+sales = trend + seasonality + noise
+
+data = pd.DataFrame({
+    "Date": dates,
+    "Sales": sales
+})
+
+# 3️⃣ Feature Engineering
+data["Day"] = data["Date"].dt.day
+data["Month"] = data["Date"].dt.month
+data["DayOfWeek"] = data["Date"].dt.dayofweek
+data["WeekOfYear"] = data["Date"].dt.isocalendar().week.astype(int)
+
+data["Lag_1"] = data["Sales"].shift(1)
+data["Lag_7"] = data["Sales"].shift(7)
+data["Rolling_7"] = data["Sales"].rolling(7).mean()
+
+data.dropna(inplace=True)
+
+# 4️⃣ Train-Test Split (Time-Based)
+train_size = int(len(data) * 0.8)
+
+train = data.iloc[:train_size]
+test = data.iloc[train_size:]
+
+X_train = train.drop(["Date", "Sales"], axis=1)
+y_train = train["Sales"]
+
+X_test = test.drop(["Date", "Sales"], axis=1)
+y_test = test["Sales"]
+# 5️⃣ Model Training
+model = RandomForestRegressor(n_estimators=300, random_state=42)
+model.fit(X_train, y_train)
+
+predictions = model.predict(X_test)
+
+mape = mean_absolute_percentage_error(y_test, predictions) * 100
+print("Model MAPE:", round(mape, 2), "%")
+
+# 6️⃣ Forecast Next 30 Days
+future_days = 30
+future_dates = pd.date_range(data["Date"].max() + pd.Timedelta(days=1), periods=future_days)
+
+future_df = pd.DataFrame({"Date": future_dates})
+future_df["Day"] = future_df["Date"].dt.day
+future_df["Month"] = future_df["Date"].dt.month
+future_df["DayOfWeek"] = future_df["Date"].dt.dayofweek
+future_df["WeekOfYear"] = future_df["Date"].dt.isocalendar().week.astype(int)
+
+last_row = data.iloc[-1]
+future_df["Lag_1"] = last_row["Sales"]
+future_df["Lag_7"] = data["Sales"].iloc[-7]
+future_df["Rolling_7"] = data["Sales"].iloc[-7:].mean()
+
+future_X = future_df.drop("Date", axis=1)
+future_forecast = model.predict(future_X)
+
+
+# 📊 GRAPH 1: Historical Sales Trend
+plt.figure()
+plt.plot(data["Date"], data["Sales"])
+plt.title("Historical Sales Trend")
+plt.xlabel("Date")
+plt.ylabel("Sales")
+plt.xticks(rotation=45)
+plt.tight_layout()
+plt.show()
+
+# 📊 GRAPH 2: Train vs Test Split
+plt.figure()
+plt.plot(train["Date"], y_train)
+plt.plot(test["Date"], y_test)
+plt.title("Train vs Test Sales")
+plt.xlabel("Date")
+plt.ylabel("Sales")
+plt.xticks(rotation=45)
+plt.tight_layout()
+plt.show()
+
+# 📊 GRAPH 3: Actual vs Predicted (Test Data)
+plt.figure()
+plt.plot(test["Date"], y_test)
+plt.plot(test["Date"], predictions)
+plt.title("Actual vs Predicted Sales")
+plt.xlabel("Date")
+plt.ylabel("Sales")
+plt.xticks(rotation=45)
+plt.tight_layout()
+plt.show()
+
+# 📊 GRAPH 4: 30-Day Future Forecast
+plt.figure()
+plt.plot(data["Date"], data["Sales"])
+plt.plot(future_df["Date"], future_forecast)
+plt.title("30-Day Sales Forecast")
+plt.xlabel("Date")
+plt.ylabel("Sales")
+plt.xticks(rotation=45)
+plt.tight_layout()
+plt.show()
+
+# 📊 GRAPH 5: Feature Importance
+importances = model.feature_importances_
+features = X_train.columns
+
+plt.figure()
+plt.bar(features, importances)
+plt.title("Feature Importance")
+plt.xlabel("Features")
+plt.ylabel("Importance Score")
+plt.xticks(rotation=45)
+plt.tight_layout()
+plt.show()

@@ -1,0 +1,199 @@
+---
+
+# 📊 SALES & DEMAND FORECASTING PROJECT – DETAILED NOTES
+
+# 1️⃣ Project Objective
+
+The goal of this project is to:
+
+* Forecast future sales using historical data
+* Capture trend and seasonality patterns
+* Use machine learning (Random Forest) for prediction
+* Evaluate model performance
+* Visualize insights using 5 graphs
+This simulates a real business use case like:
+* Retail store sales forecasting
+* E-commerce demand prediction
+* Inventory planning
+* Revenue forecasting
+# 2️⃣ Importing Libraries
+import numpy as np
+import pandas as pd
+import matplotlib.pyplot as plt
+from sklearn.ensemble import RandomForestRegressor
+from sklearn.metrics import mean_absolute_percentage_error
+### 📌 Explanation:
+### 🔹 NumPy
+Used for numerical operations and generating synthetic data.
+### 🔹 Pandas
+Used for:
+* Creating dataset
+* Handling time-series data
+* Feature engineering
+### 🔹 Matplotlib
+Used to create 5 visualizations.
+### 🔹 RandomForestRegressor
+Machine Learning model used for forecasting.
+### 🔹 MAPE
+Used to evaluate model performance in percentage terms.
+# 3️⃣ Creating Sample Business Dataset
+ python
+dates = pd.date_range(start="2022-01-01", periods=365)
+Creates 365 days (1 year) of date data.
+## Sales Generation Logic
+`python
+trend = np.linspace(100, 300, 365)
+seasonality = 20 * np.sin(np.arange(365) * (2 * np.pi / 30))
+noise = np.random.normal(0, 10, 365)
+sales = trend + seasonality + noise
+### 📌 Components of Sales
+### 🔹 1. Trend
+Gradual increase from 100 to 300.
+Represents business growth.
+### 🔹 2. Seasonality
+Cyclical pattern every 30 days.
+Represents:
+* Monthly demand cycle
+* Salary cycle
+* Promotions
+### 🔹 3. Noise
+Random variation.
+Represents:
+* Unexpected events
+* Customer fluctuations
+Final sales =
+Trend + Seasonality + Noise
+This makes the dataset realistic.
+# 4️⃣ Feature Engineering
+Feature engineering is the most important step in time-series forecasting.
+## 📅 Date-Based Features
+python
+data["Day"]
+data["Month"]
+data["DayOfWeek"]
+data["WeekOfYear"]
+### Why?
+Because sales depend on:
+* Month (festive season)
+* Day of week (weekend sales)
+* Week number (seasonal patterns)
+Machine learning models cannot understand dates directly.
+So we convert them into numerical features.
+## 🔁 Lag Features
+`python
+data["Lag_1"] = data["Sales"].shift(1)
+data["Lag_7"] = data["Sales"].shift(7)
+### What is Lag?
+Lag means previous sales values.
+Lag_1 → Yesterday’s sales
+Lag_7 → Sales 7 days ago
+### Why important?
+Sales today depend on:
+* Yesterday’s demand
+* Same day last week
+Without lag features, forecasting is weak.
+## 📊 Rolling Mean Feature
+python
+data["Rolling_7"] = data["Sales"].rolling(7).mean()
+Rolling_7 = Average of last 7 days.
+### Why?
+It smooths noise and captures short-term trend.
+Very important for forecasting stability.
+## Removing Null Values
+python
+data.dropna(inplace=True)
+Lag and rolling create missing values at start.
+We remove them.
+# 5️⃣ Train-Test Split (Time-Based)
+ python
+train_size = int(len(data) * 0.8)
+80% training
+20% testing
+⚠ Important:
+We DO NOT shuffle time-series data.
+Why?
+Because future data should never be used to predict past.
+# 6️⃣ Model Training
+python
+model = RandomForestRegressor(n_estimators=300)
+### Why Random Forest?
+* Handles non-linearity
+* Works well with time features
+* Captures complex patterns
+* No need for scaling
+## Model Fitting
+`python
+model.fit(X_train, y_train)
+The model learns relationship between:
+Features → Sales
+# 7️⃣ Model Evaluation
+python
+mape = mean_absolute_percentage_error(y_test, predictions)
+### What is MAPE?
+MAPE = Mean Absolute Percentage Error
+Formula:
+[
+MAPE = \frac{1}{n} \sum \left| \frac{Actual - Predicted}{Actual} \right| \times 100
+]
+### Interpretation:
+| MAPE   | Meaning   |
+| ------ | --------- |
+| < 5%   | Excellent |
+| 5–10%  | Very Good |
+| 10–20% | Good      |
+| >20%   | Poor      |
+
+# 8️⃣ Recursive 30-Day Forecasting
+This is the most important advanced part.
+Instead of using fixed lag values, we:
+1. Predict Day 1
+2. Add predicted value to dataset
+3. Use it as lag for Day 2
+4. Repeat for 30 days
+This is called:
+🔁 Recursive Multi-step Forecasting
+Why needed?
+Because future actual values are unknown.
+# 9️⃣ Visualizations Explanation
+## 📊 Graph 1: Historical Sales Trend
+Shows:
+* Overall business growth
+* Seasonality pattern
+* Noise
+Business Insight:
+Is company growing steadily?
+## 📊 Graph 2: Train vs Test
+Shows:
+* Data split
+* Model training boundary
+Business Insight:
+Model is trained on past, tested on future.
+## 📊 Graph 3: Actual vs Predicted
+Most important evaluation graph.
+If both lines overlap closely → Good model.
+Business Insight:
+Prediction accuracy.
+## 📊 Graph 4: 30-Day Forecast
+Shows future predicted sales.
+Used for:
+* Inventory planning
+* Workforce planning
+* Budget forecasting
+## 📊 Graph 5: Feature Importance
+python
+model.feature_importances_
+Shows which features influence prediction most.
+Example:
+If Lag_1 importance is highest → Yesterday’s sales matter most.
+
+Business Insight:
+Understand drivers of sales.
+# 🔟 Why This Project Is Strong
+This project demonstrates:
+✔ Time-series feature engineering
+✔ Machine learning modeling
+✔ Recursive forecasting
+✔ Model evaluation
+✔ Business interpretation
+✔ Visualization skills
+
